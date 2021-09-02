@@ -9,7 +9,11 @@ const ejs = require('ejs')
 const $ = module.exports = {}
 
 process.env.NODE_CONFIG_DIR = path.resolve(__dirname, 'config') // TODO: maybe this isn't necessary
-$.config = require('config')
+const configApi = require('config')
+$.config = {
+    configApi,
+    server: configApi.toObject()
+}
 
 const dirs = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'routers', 'routes', 'events', 'jobs']
 _.each(dirs, function (dir) {
