@@ -8,7 +8,6 @@ const ejs = require('ejs')
 
 const $ = module.exports = {}
 
-process.env.NODE_CONFIG_DIR = path.resolve(__dirname, 'config') // TODO: maybe this isn't necessary
 const configApi = require('config')
 $.config = {
     configApi,
