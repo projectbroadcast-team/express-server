@@ -4,12 +4,14 @@ const fs = require('fs')
 const glob = require('glob')
 const path = require('path')
 const s = require('underscore.string')
-const yamlConfig = require('yaml-config')
 const ejs = require('ejs')
 
 const $ = module.exports = {}
 
-const dirs = ['config', 'logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'routers', 'routes', 'events', 'jobs']
+process.env.NODE_CONFIG_DIR = path.resolve(__dirname, 'config') // TODO: maybe this isn't necessary
+$.config = require('config')
+
+const dirs = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'routers', 'routes', 'events', 'jobs']
 _.each(dirs, function (dir) {
     $[dir] = function () { return _.isFunction($[dir].index) && $[dir].index.apply(this, arguments) }
 })
@@ -24,10 +26,6 @@ const mapRequire = function (moduleName, dirs) {
         const indexes = []
 
         const splitRefFile = function (ref, split, file, isIndex) {
-            if (file.indexOf('.yaml') !== -1) {
-                ref[split] = ref[split] || {}
-                return _.extend(ref[split], yamlConfig.readConfig(path.resolve(file)))
-            }
             if (file.indexOf('.ejs') !== -1) {
                 const readFile = fs.readFileSync(path.resolve(file), { encoding: 'utf8' })
                 return (ref[split] = ejs.compile(readFile))
