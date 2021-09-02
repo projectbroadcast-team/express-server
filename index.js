@@ -168,7 +168,7 @@ $.console = function (extendFn) {
 }
 
 $.start = function (callback) {
-    const port = $.config.get('port')
+    const port = $.config.server.port
     $.http = $.server.listen(0, port, function () {
         console.log(`express-server listening on port ${port}`)
         return callback && callback(null, $)
