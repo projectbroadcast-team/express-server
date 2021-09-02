@@ -11,7 +11,7 @@ const $ = module.exports = {}
 const configApi = require('config')
 $.config = {
     configApi,
-    server: configApi.toObject()
+    server: configApi.util.toObject()
 }
 
 const dirs = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'routers', 'routes', 'events', 'jobs']
