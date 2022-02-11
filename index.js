@@ -141,7 +141,7 @@ $.load = function (dirs) {
 
         const globbedDirs = []
         _.each(dirs, function (dir) {
-            const files = glob.sync(`${dir}/${moduleName}/**/*{.js,.yaml,.ejs}`)
+            const files = glob.sync(`${dir}/${moduleName}/**/*{.js,.ejs}`)
             if (!files.length) {
                 return
             }
