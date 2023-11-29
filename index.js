@@ -4,12 +4,17 @@ const fs = require('fs')
 const glob = require('glob')
 const path = require('path')
 const s = require('underscore.string')
-const yamlConfig = require('yaml-config')
 const ejs = require('ejs')
 
 const $ = module.exports = {}
 
-const dirs = ['config', 'logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'routers', 'routes', 'events', 'jobs']
+const configApi = require('config')
+$.config = {
+    configApi,
+    server: configApi.util.toObject()
+}
+
+const dirs = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'routers', 'routes', 'events', 'jobs']
 _.each(dirs, function (dir) {
     $[dir] = function () { return _.isFunction($[dir].index) && $[dir].index.apply(this, arguments) }
 })
@@ -24,10 +29,6 @@ const mapRequire = function (moduleName, dirs) {
         const indexes = []
 
         const splitRefFile = function (ref, split, file, isIndex) {
-            if (file.indexOf('.yaml') !== -1) {
-                ref[split] = ref[split] || {}
-                return _.extend(ref[split], yamlConfig.readConfig(path.resolve(file)))
-            }
             if (file.indexOf('.ejs') !== -1) {
                 const readFile = fs.readFileSync(path.resolve(file), { encoding: 'utf8' })
                 return (ref[split] = ejs.compile(readFile))
@@ -64,7 +65,7 @@ const mapRequire = function (moduleName, dirs) {
 
         _.each(files, function (name, file) {
             if (file.indexOf('index.js') !== -1) {
-                return indexes.push({ name: name, file: file })
+                return indexes.push({ name, file })
             }
             log.push(name)
             // console.log('!!!!files loading', name, file);
@@ -140,7 +141,7 @@ $.load = function (dirs) {
 
         const globbedDirs = []
         _.each(dirs, function (dir) {
-            const files = glob.sync(`${dir}/${moduleName}/**/*{.js,.yaml,.ejs}`)
+            const files = glob.sync(`${dir}/${moduleName}/**/*{.js,.ejs}`)
             if (!files.length) {
                 return
             }
@@ -167,8 +168,10 @@ $.console = function (extendFn) {
 }
 
 $.start = function (callback) {
-    $.http = $.server.listen($.server.get('port'), function () {
-        console.log(`express-server listening on port ${$.server.get('port')}`)
+    const port = $.config.server.port
+    const host = '0.0.0.0'
+    $.http = $.server.listen({ host, port }, function () {
+        console.log(`express-server listening on port ${port}`)
         return callback && callback(null, $)
     })
     return $
