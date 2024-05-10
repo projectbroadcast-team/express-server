@@ -5,7 +5,7 @@
     "lint-check": "npx eslint .",
     "lint-fix": "npx eslint --fix .",
     "lint-fix-staged": "npx lint-staged --verbose",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "dependencies": {
     "config": "^3.3.7",
@@ -18,7 +18,7 @@
     "yaml": "^2.4.2"
   },
   "devDependencies": {
-    "husky": "^8.0.1",
+    "husky": "^9.0.11",
     "lint-staged": "^13.0.3",
     "standard": "^17.0.0"
   },
