@@ -1,7 +1,7 @@
 const nodeConsole = require('./lib/node-console')
 const _ = require('underscore')
 const fs = require('fs')
-const glob = require('glob')
+const { glob } = require('glob')
 const path = require('path')
 const s = require('underscore.string')
 const ejs = require('ejs')
@@ -141,7 +141,7 @@ $.load = function (dirs) {
 
         const globbedDirs = []
         _.each(dirs, function (dir) {
-            const files = glob.sync(`${dir}/${moduleName}/**/*{.js,.ejs}`)
+            const files = glob.sync(`${dir}/${moduleName}/**/*{.js,.ejs}`).sort()
             if (!files.length) {
                 return
             }
