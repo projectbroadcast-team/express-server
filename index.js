@@ -14,7 +14,7 @@ $.config = {
     server: configApi.util.toObject()
 }
 
-const dirs = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'routers', 'routes', 'events', 'jobs']
+const dirs = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'clients', 'routers', 'routes', 'events', 'jobs', 'queues', 'workers']
 _.each(dirs, function (dir) {
     $[dir] = function () { return _.isFunction($[dir].index) && $[dir].index.apply(this, arguments) }
 })
