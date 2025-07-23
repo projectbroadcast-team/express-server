@@ -1,163 +1,60 @@
-const nodeConsole = require('./lib/node-console')
-const _ = require('underscore')
-const fs = require('fs')
-const { glob } = require('glob')
-const path = require('path')
-const s = require('underscore.string')
-const ejs = require('ejs')
-
-const $ = module.exports = {}
-
 const configApi = require('config')
+const express = require('express')
+const { globSync } = require('glob')
+const path = require('path')
+
+const nodeConsole = require('./lib/node-console.js')
+const { pathReduce, stripExt, mapRequire } = require('./lib/utils.js')
+
+const $ = {}
+
 $.config = {
     configApi,
     server: configApi.util.toObject()
 }
 
-const dirs = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'clients', 'routers', 'routes', 'events', 'jobs', 'queues', 'workers']
-_.each(dirs, function (dir) {
-    $[dir] = function () { return _.isFunction($[dir].index) && $[dir].index.apply(this, arguments) }
+const DEFAULT_DIRS = ['logs', 'db', 'templates', 'views', 'lib', 'helpers', 'settings', 'plugins', 'schemas', 'models', 'managers', 'orchestrators', 'controllers', 'clients', 'routers', 'routes', 'events', 'jobs', 'queues', 'workers']
+
+DEFAULT_DIRS.forEach(function (dir) {
+    const serverWithIndex = $
+    const dirFunction = function () {
+        return typeof serverWithIndex[dir]?.index === 'function' && serverWithIndex[dir].index.apply(this, Array.from(arguments))
+    }
+    serverWithIndex[dir] = dirFunction
 })
 
-$.express = require('express')
+$.express = express
 $.server = $.express()
 
-const mapRequire = function (moduleName, dirs) {
-    const log = []
-    _.each(dirs, function (files) {
-        const module = $[moduleName]
-        const indexes = []
+$.load = function (searchDirs) {
+    searchDirs = searchDirs || [path.resolve(__dirname, '..', '..')]
 
-        const splitRefFile = function (ref, split, file, isIndex) {
-            if (file.indexOf('.ejs') !== -1) {
-                const readFile = fs.readFileSync(path.resolve(file), { encoding: 'utf8' })
-                return (ref[split] = ejs.compile(readFile))
-            }
-
-            const module = require(path.resolve(file))
-            ref[split] = module
-
-            if (isIndex) {
-                _.extend(ref, module)
-            }
-        }
-
-        const doFile = function (name, file, isIndex) {
-            const splits = name.split('/')
-            let ref = module
-            if (splits.length > 1) {
-                _.each(splits, function (split, index) {
-                    split = s.camelize(split)
-                    if (index === splits.length - 1) {
-                        splitRefFile(ref, split, file, isIndex)
-                    } else {
-                        const localRef = ref
-                        ref = ref[split] || (ref[split] = function () {
-                            return _.isFunction(localRef[split].index) && localRef[split].index.apply(this, arguments)
-                        })
-                    }
-                })
-            } else {
-                const split = s.camelize(name)
-                splitRefFile(ref, split, file, isIndex)
-            }
-        }
-
-        _.each(files, function (name, file) {
-            if (file.indexOf('index.js') !== -1) {
-                return indexes.push({ name, file })
-            }
-            log.push(name)
-            // console.log('!!!!files loading', name, file);
-            doFile(name, file)
-        })
-
-        _.each(indexes, function (index) {
-            log.push(index.name)
-            // console.log('!!!!indexes loading', index);
-            doFile(index.name, index.file, true)
-        })
-    })
-    // console.log('loaded', moduleName, _.uniq(log));
-}
-
-const pathReduce = function (files) {
-    if (Object.keys(files).length === 1) {
-        const file = Object.keys(files)[0]
-        files[file] = path.basename(file)
-        return files
-    }
-
-    const keys = []
-    for (const file in files) {
-        keys.push(files[file].split('/'))
-    }
-
-    let common = 0
-    while (keys.every((key) => key[common] === keys[0][common])) {
-        common++
-    }
-    common = `${keys[0].slice(0, common).join('/')}/`
-
-    for (const file in files) {
-        files[file] = files[file].substring(common.length)
-    }
-    return files
-}
-
-const stripExt = function (files) {
-    const filenames = Object.keys(files)
-    // contains map of stripped filenames
-    const conflicts = {}
-    for (let i = 0, l = filenames.length; i < l; i++) {
-        (function (file, key) {
-            const newKey = key.substr(0, key.length - path.extname(key).length)
-            // if already file with same stripping
-            if (_.has(conflicts, newKey)) {
-                // check if first conflict
-                if (conflicts[newKey] !== false) {
-                    // revert previous file stripping
-                    files[conflicts[newKey][0]] = conflicts[newKey][1]
-                    conflicts[newKey] = false
-                }
-            } else {
-                // strip key
-                files[file] = newKey
-                // remember for possible later conflicts
-                conflicts[newKey] = [file, key]
-            }
-        })(filenames[i], files[filenames[i]])
-    }
-    return files
-}
-
-$.load = function (dirs) {
-    dirs = dirs || [path.resolve(__dirname, '..', '..')]
-
-    _.each(_.keys($), function (moduleName) {
+    for (const moduleName of DEFAULT_DIRS) {
         if (['load', 'console', 'start', 'express', 'server'].indexOf(moduleName) !== -1) {
-            return
+            continue
         }
-
         const globbedDirs = []
-        _.each(dirs, function (dir) {
-            const files = glob.sync(`${dir}/${moduleName}/**/*{.js,.ejs}`).sort()
+        for (const dir of searchDirs) {
+            const files = globSync(`${dir}/${moduleName}/**/*{.js,.ejs}`)
             if (!files.length) {
-                return
+                continue
             }
-            const mapped = _.reduce(files, function (hash, file) {
+            const mapped = files.sort().reduce(function (hash, file) {
                 hash[file] = file
                 return hash
             }, {})
-            // console.log('\nmapped = ', mapped);
             const pathReduced = pathReduce(mapped)
-            // console.log('pathReduced = ', pathReduced);
             const strippedExt = stripExt(pathReduced)
-            // console.log('strippedExt = ', strippedExt);
             globbedDirs.push(strippedExt)
-        })
-        mapRequire(moduleName, globbedDirs)
-    })
+        }
+        if (globbedDirs.length > 0) {
+            const serverWithIndex = $
+            const moduleRef = serverWithIndex[moduleName]
+            if (moduleRef) {
+                mapRequire(moduleRef, globbedDirs)
+            }
+        }
+    }
 
     return $
 }
@@ -168,11 +65,13 @@ $.console = function (extendFn) {
 }
 
 $.start = function (callback) {
-    const port = $.config.server.port
-    const host = '0.0.0.0'
-    $.http = $.server.listen({ host, port }, function () {
+    const port = $.config.server.port || 3000
+    const host = $.config.server.host || '0.0.0.0'
+    $.http = $.server.listen(port, host, function () {
         console.log(`express-server listening on port ${port}`)
         return callback && callback(null, $)
     })
     return $
 }
+
+module.exports = $
