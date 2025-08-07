@@ -1,26 +1,36 @@
 {
   "name": "express-server",
   "version": "0.0.1",
+  "type": "commonjs",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "lib/"
+  ],
   "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:watch": "node --test --watch test/*.test.js",
     "lint-check": "npx eslint .",
     "lint-fix": "npx eslint --fix .",
     "lint-fix-staged": "npx lint-staged --verbose",
     "prepare": "husky"
   },
   "dependencies": {
-    "config": "^3.3.7",
+    "config": "^4.0.1",
     "ejs": "^3.1.10",
-    "express": "^4.19.2",
-    "glob": "^10.3.14",
-    "moment": "^2.30.1",
-    "underscore": "^1.13.6",
-    "underscore.string": "3.3.6",
-    "yaml": "^2.4.2"
+    "glob": "^11.0.3",
+    "yaml": "^2.8.0"
+  },
+  "peerDependencies": {
+    "express": "^4.18.0"
   },
   "devDependencies": {
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.2",
-    "standard": "^17.0.0"
+    "@stylistic/eslint-plugin": "^5.2.2",
+    "eslint": "^9.31.0",
+    "express": "^4.18.1",
+    "globals": "^16.3.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^16.1.2"
   },
   "lint-staged": {
     "*.js": "npx eslint --fix"
